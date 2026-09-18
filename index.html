@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Call Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2ece2;
+    --paper-line: #ddd2c1;
+    --ink: #2a221d;
+    --ink-soft: #6b5f54;
+    --wine: #7a2e3d;
+    --wine-soft: #a8546236;
+    --sage: #56705a;
+    --card: #ffffff;
+    --danger: #a13a2f;
+    --focus: #7a2e3d;
+    --shadow: rgba(42, 34, 29, 0.08);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #1c1714;
+      --paper-line: #38302a;
+      --ink: #ece3d8;
+      --ink-soft: #a89a8a;
+      --wine: #d98b98;
+      --wine-soft: #d98b9830;
+      --sage: #8fae93;
+      --card: #241d18;
+      --danger: #e08877;
+      --focus: #d98b98;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1c1714;
+    --paper-line: #38302a;
+    --ink: #ece3d8;
+    --ink-soft: #a89a8a;
+    --wine: #d98b98;
+    --wine-soft: #d98b9830;
+    --sage: #8fae93;
+    --card: #241d18;
+    --danger: #e08877;
+    --focus: #d98b98;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1rem;
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.4rem 1.25rem 5rem;
+  }
+
+  header.masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .brand {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .brand small {
+    display: block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-top: 0.2rem;
+  }
+  .settings {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--paper-line);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin: 1rem 0 1.5rem;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .settings.open { display: block; }
+  .settings h2 {
+    font-family: "Fraunces", serif;
+    font-size: 1rem;
+    margin: 0 0 0.6rem;
+    font-weight: 600;
+  }
+  .settings p {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0 0 0.8rem;
+  }
+  .settings label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.25rem;
+  }
+  .settings input[type="email"], .settings input[type="text"] {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+
+  nav.tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin: 1.3rem 0 1.6rem;
+    flex-wrap: wrap;
+  }
+  nav.tabs button {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
+    background: transparent;
+    border: 1px solid var(--paper-line);
+    border-bottom: none;
+    color: var(--ink-soft);
+    padding: 0.55rem 1rem 0.5rem;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+  }
+  nav.tabs button.active {
+    background: var(--card);
+    color: var(--ink);
+    border-color: var(--ink);
+    border-bottom: 1px solid var(--card);
+    font-weight: 500;
+  }
+  nav.tabs button:not(.active):hover { color: var(--ink); }
+
+  .panel {
+    display: none;
+    border-top: 1px solid var(--ink);
+    padding-top: 1.6rem;
+  }
+  .panel.active { display: block; }
+
+  .panel > .lede {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    max-width: 54ch;
+    margin: 0 0 1.6rem;
+  }
+
+  .field {
+    margin-bottom: 1.35rem;
+  }
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.35rem;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field input[type="time"],
+  .field textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--paper-line);
+    padding: 0.4rem 0.1rem;
+    font-family: inherit;
+    font-size: 0.98rem;
+    color: var(--ink);
+    resize: vertical;
+  }
+  .field textarea { min-height: 4.2rem; line-height: 1.55; }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-bottom: 2px solid var(--focus);
+    padding-bottom: calc(0.4rem - 1px);
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--ink-soft); opacity: 0.55; }
+
+  .row-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+  }
+  @media (max-width: 480px) {
+    .row-two { grid-template-columns: 1fr; }
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px dashed var(--paper-line);
+  }
+  button.act {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 0.85rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 7px;
+    border: 1px solid var(--paper-line);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button.act:hover { border-color: var(--ink); }
+  button.act.primary {
+    background: var(--wine);
+    border-color: var(--wine);
+    color: #fff;
+  }
+  button.act.primary:hover { filter: brightness(1.08); }
+  button.act.danger { color: var(--danger); }
+  button.act.danger:hover { border-color: var(--danger); }
+
+  .status-line {
+    margin-top: 0.9rem;
+    font-size: 0.78rem;
+    color: var(--sage);
+    min-height: 1.1em;
+  }
+  .status-line.err { color: var(--danger); }
+
+  .saved-list { list-style: none; padding: 0; margin: 0; }
+  .saved-item {
+    background: var(--card);
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.7rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .saved-item .meta { font-size: 0.85rem; }
+  .saved-item .meta .kind {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    color: var(--wine);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+  .saved-item .meta .sub { color: var(--ink-soft); font-size: 0.78rem; }
+  .saved-item .btns { display: flex; gap: 0.4rem; }
+  .saved-item button {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--paper-line);
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .saved-item button:hover { color: var(--ink); border-color: var(--ink); }
+  .empty-state {
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    border: 1px dashed var(--paper-line);
+    border-radius: 8px;
+    padding: 1.4rem;
+    text-align: center;
+  }
+
+  footer.note {
+    margin-top: 2.5rem;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+
+  @media print {
+    body { background: #fff; }
+    nav.tabs, .actions, .settings, .settings-toggle, footer.note, .status-line { display: none !important; }
+    .panel { display: block !important; border: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">Call Reports
+      <small>Replica for testing · not the live app</small>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="field">Field Meeting</button>
+    <button class="tab-btn" data-tab="phone">Phone Call</button>
+    <button class="tab-btn" data-tab="saved">Saved</button>
+  </nav>
+
+  <div class="settings open" id="settings">
+    <h2>Send settings</h2>
+    <p>The real recipient addresses on brandvoiceai.pplx.app are hidden from view. Enter the actual addresses here to test the send flow — this is saved only in this browser.</p>
+    <label for="mailTo">To</label>
+    <input type="email" id="mailTo" placeholder="you@brandvoiceai.com">
+    <label for="mailCc">CC (optional)</label>
+    <input type="email" id="mailCc" placeholder="second-recipient@brandvoiceai.com">
+    <label for="mailAuthuser">Compose from this Gmail account (optional)</label>
+    <input type="email" id="mailAuthuser" placeholder="you@brandvoiceai.com">
+  </div>
+
+  <!-- FIELD MEETING -->
+  <section class="panel active" id="panel-field" data-kind="field" data-label="Field Meeting Report">
+    <p class="lede">For meetings held in the field with a dealer or partner. Every field is optional. Save &amp; email opens a Gmail draft addressed to the recipients above.</p>
+
+    <div class="field"><label for="f-company">Company name</label><input type="text" id="f-company"></div>
+    <div class="field"><label for="f-attendees">Person(s) in attendance</label><input type="text" id="f-attendees"></div>
+    <div class="row-two">
+      <div class="field"><label for="f-date">Date of meeting</label><input type="date" id="f-date"></div>
+      <div class="field"><label for="f-time">Time of meeting</label><input type="time" id="f-time"></div>
+    </div>
+    <div class="field"><label for="f-goal">Initial goal of the meeting</label><textarea id="f-goal"></textarea></div>
+    <div class="field"><label for="f-thoughts">Dealer's thoughts on what was presented</label><textarea id="f-thoughts"></textarea></div>
+    <div class="field"><label for="f-objections">Objections</label><textarea id="f-objections"></textarea></div>
+    <div class="field"><label for="f-nextsteps">Next steps</label><textarea id="f-nextsteps"></textarea></div>
+    <div class="field"><label for="f-followup">Follow-up date</label><input type="date" id="f-followup"></div>
+
+    <div class="actions">
+      <button class="act primary" data-action="send">Save &amp; email</button>
+      <button class="act" data-action="doc">Download .doc</button>
+      <button class="act" data-action="print">Print / Save PDF</button>
+      <button class="act danger" data-action="clear">Clear</button>
+    </div>
+    <div class="status-line"></div>
+  </section>
+
+  <!-- PHONE CALL -->
+  <section class="panel" id="panel-phone" data-kind="phone" data-label="Phone Call Report">
+    <p class="lede">For calls with a dealer or partner. Field labels here are a reasonable guess at the original form — adjust them to match if you have the real ones.</p>
+
+    <div class="field"><label for="p-company">Company name</label><input type="text" id="p-company"></div>
+    <div class="field"><label for="p-person">Person spoken with</label><input type="text" id="p-person"></div>
+    <div class="row-two">
+      <div class="field"><label for="p-date">Date of call</label><input type="date" id="p-date"></div>
+      <div class="field"><label for="p-time">Time of call</label><input type="time" id="p-time"></div>
+    </div>
+    <div class="field"><label for="p-purpose">Purpose of call</label><textarea id="p-purpose"></textarea></div>
+    <div class="field"><label for="p-summary">Summary of discussion</label><textarea id="p-summary"></textarea></div>
+    <div class="field"><label for="p-objections">Objections</label><textarea id="p-objections"></textarea></div>
+    <div class="field"><label for="p-nextsteps">Next steps</label><textarea id="p-nextsteps"></textarea></div>
+    <div class="field"><label for="p-followup">Follow-up date</label><input type="date" id="p-followup"></div>
+
+    <div class="actions">
+      <button class="act primary" data-action="send">Save &amp; email</button>
+      <button class="act" data-action="doc">Download .doc</button>
+      <button class="act" data-action="print">Print / Save PDF</button>
+      <button class="act danger" data-action="clear">Clear</button>
+    </div>
+    <div class="status-line"></div>
+  </section>
+
+  <!-- SAVED -->
+  <section class="panel" id="panel-saved" data-kind="saved">
+    <p class="lede">Reports you've saved on this device, most recent first.</p>
+    <ul class="saved-list" id="savedList"></ul>
+  </section>
+
+  <footer class="note">
+    This is an unofficial replica built to test the "Save &amp; email" flow — it composes a Gmail draft using Gmail's own compose URL rather than a page-side mail send, so it works from any static host, including this one. Autosaves as you type, per report type, in this browser only.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const FIELD_KEYS = {
+    field: [
+      ["f-company", "Company name"],
+      ["f-attendees", "Person(s) in attendance"],
+      ["f-date", "Date of meeting"],
+      ["f-time", "Time of meeting"],
+      ["f-goal", "Initial goal of the meeting"],
+      ["f-thoughts", "Dealer's thoughts on what was presented"],
+      ["f-objections", "Objections"],
+      ["f-nextsteps", "Next steps"],
+      ["f-followup", "Follow-up date"]
+    ],
+    phone: [
+      ["p-company", "Company name"],
+      ["p-person", "Person spoken with"],
+      ["p-date", "Date of call"],
+      ["p-time", "Time of call"],
+      ["p-purpose", "Purpose of call"],
+      ["p-summary", "Summary of discussion"],
+      ["p-objections", "Objections"],
+      ["p-nextsteps", "Next steps"],
+      ["p-followup", "Follow-up date"]
+    ]
+  };
+
+  const LS_PREFIX = "rw-replica:";
+  const SETTINGS_KEY = LS_PREFIX + "settings";
+  const SAVED_KEY = LS_PREFIX + "saved-reports";
+  const DRAFT_KEY = (kind) => LS_PREFIX + "draft:" + kind;
+
+  function safeGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function safeSet(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) { /* storage unavailable */ }
+  }
+
+  // ---- settings ----
+  const settingsPanel = document.getElementById("settings");
+  const mailTo = document.getElementById("mailTo");
+  const mailCc = document.getElementById("mailCc");
+  const mailAuthuser = document.getElementById("mailAuthuser");
+
+  (function loadSettings() {
+    try {
+      const raw = safeGet(SETTINGS_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        mailTo.value = s.to || "";
+        mailCc.value = s.cc || "";
+        mailAuthuser.value = s.authuser || "";
+      }
+    } catch (e) {}
+  })();
+  [mailTo, mailCc, mailAuthuser].forEach((el) => {
+    el.addEventListener("input", () => {
+      safeSet(SETTINGS_KEY, JSON.stringify({
+        to: mailTo.value.trim(),
+        cc: mailCc.value.trim(),
+        authuser: mailAuthuser.value.trim()
+      }));
+    });
+  });
+
+  // ---- tabs ----
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const panels = {
+    field: document.getElementById("panel-field"),
+    phone: document.getElementById("panel-phone"),
+    saved: document.getElementById("panel-saved")
+  };
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(panels).forEach((p) => p.classList.remove("active"));
+      panels[btn.dataset.tab].classList.add("active");
+      if (btn.dataset.tab === "saved") renderSavedList();
+    });
+  });
+
+  // ---- autosave drafts ----
+  function collect(kind) {
+    const out = {};
+    FIELD_KEYS[kind].forEach(([id]) => {
+      out[id] = document.getElementById(id).value;
+    });
+    return out;
+  }
+  function fillFrom(kind, data) {
+    FIELD_KEYS[kind].forEach(([id]) => {
+      if (data[id] !== undefined) document.getElementById(id).value = data[id];
+    });
+  }
+  function loadDraft(kind) {
+    const raw = safeGet(DRAFT_KEY(kind));
+    if (!raw) return;
+    try { fillFrom(kind, JSON.parse(raw)); } catch (e) {}
+  }
+  function attachAutosave(kind) {
+    FIELD_KEYS[kind].forEach(([id]) => {
+      document.getElementById(id).addEventListener("input", () => {
+        safeSet(DRAFT_KEY(kind), JSON.stringify(collect(kind)));
+      });
+    });
+  }
+  ["field", "phone"].forEach((kind) => { loadDraft(kind); attachAutosave(kind); });
+
+  // ---- helpers ----
+  function labelFor(kind) { return panels[kind].dataset.label; }
+
+  function buildSubject(kind, data) {
+    const company = (data[kind === "field" ? "f-company" : "p-company"] || "").trim() || "Untitled";
+    const date = (data[kind === "field" ? "f-date" : "p-date"] || "").trim();
+    return labelFor(kind) + " — " + company + (date ? " — " + date : "");
+  }
+  function buildBody(kind, data) {
+    const lines = [];
+    FIELD_KEYS[kind].forEach(([id, label]) => {
+      const v = (data[id] || "").trim();
+      if (v) lines.push(label + ":\n" + v + "\n");
+    });
+    if (!lines.length) lines.push("(No fields completed.)");
+    lines.push("\n— Sent from Call Reports (replica)");
+    return lines.join("\n");
+  }
+
+  function gmailComposeUrl({ to, cc, authuser, subject, body }) {
+    const p = new URLSearchParams({ view: "cm", fs: "1", tf: "1", to: to || "", su: subject, body: body });
+    if (cc) p.set("cc", cc);
+    if (authuser) p.set("authuser", authuser);
+    return "https://mail.google.com/mail/?" + p.toString();
+  }
+
+  const URL_SAFE_LIMIT = 1900;
+
+  function setStatus(panel, msg, isErr) {
+    const line = panel.querySelector(".status-line");
+    line.textContent = msg;
+    line.classList.toggle("err", !!isErr);
+  }
+
+  function saveToSavedList(kind, data) {
+    let list = [];
+    try { list = JSON.parse(safeGet(SAVED_KEY) || "[]"); } catch (e) { list = []; }
+    list.unshift({
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      kind, data,
+      savedAt: new Date().toISOString()
+    });
+    safeSet(SAVED_KEY, JSON.stringify(list));
+  }
+
+  function renderSavedList() {
+    const ul = document.getElementById("savedList");
+    let list = [];
+    try { list = JSON.parse(safeGet(SAVED_KEY) || "[]"); } catch (e) { list = []; }
+    ul.innerHTML = "";
+    if (!list.length) {
+      ul.innerHTML = '<div class="empty-state">No reports saved yet. Use "Save &amp; email" on the Field Meeting or Phone Call tab.</div>';
+      return;
+    }
+    list.forEach((entry) => {
+      const li = document.createElement("li");
+      li.className = "saved-item";
+      const company = entry.data[entry.kind === "field" ? "f-company" : "p-company"] || "Untitled";
+      const when = new Date(entry.savedAt).toLocaleString();
+      li.innerHTML =
+        '<div class="meta"><span class="kind">' + labelFor(entry.kind) + '</span>' +
+        '<strong>' + escapeHtml(company) + '</strong><div class="sub">' + when + '</div></div>' +
+        '<div class="btns"><button data-act="resend">Email again</button><button data-act="delete">Delete</button></div>';
+      li.querySelector('[data-act="resend"]').addEventListener("click", () => {
+        const subject = buildSubject(entry.kind, entry.data);
+        const body = buildBody(entry.kind, entry.data);
+        openCompose(subject, body);
+      });
+      li.querySelector('[data-act="delete"]').addEventListener("click", () => {
+        const filtered = list.filter((e) => e.id !== entry.id);
+        safeSet(SAVED_KEY, JSON.stringify(filtered));
+        renderSavedList();
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function openCompose(subject, body) {
+    const to = mailTo.value.trim();
+    const cc = mailCc.value.trim();
+    const authuser = mailAuthuser.value.trim();
+
+    let url = gmailComposeUrl({ to, cc, authuser, subject, body });
+    let finalBody = body;
+    if (url.length > URL_SAFE_LIMIT) {
+      finalBody = "(Report is on your clipboard — paste it here with Cmd+V / Ctrl+V.)";
+      url = gmailComposeUrl({ to, cc, authuser, subject, body: finalBody });
+      if (navigator.clipboard) navigator.clipboard.writeText(body).catch(() => {});
+    }
+    const win = window.open(url, "_blank", "noopener");
+    return !!win;
+  }
+
+  // ---- actions ----
+  document.querySelectorAll(".panel[data-kind]").forEach((panel) => {
+    const kind = panel.dataset.kind;
+    if (kind === "saved") return;
+
+    panel.querySelectorAll("button[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const data = collect(kind);
+        const action = btn.dataset.action;
+
+        if (action === "send") {
+          if (!mailTo.value.trim()) {
+            setStatus(panel, "Add a recipient in Recipients (top right) before sending.", true);
+            settingsPanel.classList.add("open");
+            return;
+          }
+          saveToSavedList(kind, data);
+          const subject = buildSubject(kind, data);
+          const body = buildBody(kind, data);
+          const opened = openCompose(subject, body);
+          setStatus(panel, opened
+            ? "Saved, and opened a Gmail draft — review and hit Send there."
+            : "Saved. Your browser blocked the Gmail window — allow pop-ups for this page and try again.", !opened);
+        }
+
+        if (action === "doc") {
+          const subject = buildSubject(kind, data);
+          const body = buildBody(kind, data).replace(/\n/g, "<br>");
+          const html = "<html><head><meta charset='utf-8'><title>" + escapeHtml(subject) +
+            "</title></head><body><h2>" + escapeHtml(subject) + "</h2><p>" + body + "</p></body></html>";
+          const blob = new Blob(["\ufeff", html], { type: "application/msword" });
+          triggerDownload(blob, subject.replace(/[^\w\- ]+/g, "").slice(0, 60) + ".doc");
+          setStatus(panel, "Downloaded .doc.");
+        }
+
+        if (action === "print") {
+          window.print();
+        }
+
+        if (action === "clear") {
+          FIELD_KEYS[kind].forEach(([id]) => { document.getElementById(id).value = ""; });
+          safeSet(DRAFT_KEY(kind), JSON.stringify({}));
+          setStatus(panel, "Cleared.");
+        }
+      });
+    });
+  });
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  renderSavedList();
+})();
+</script>
+</body>
+</html>
