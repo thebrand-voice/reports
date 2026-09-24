@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
     --paper: #f2ece2;
@@ -301,14 +302,33 @@
     max-width: 60ch;
   }
 
+  .print-view { display: none; }
+  .print-view h1 {
+    font-family: "Fraunces", serif;
+    font-size: 1.3rem;
+    margin: 0 0 1.4rem;
+  }
+  .print-view .pv-field { margin-bottom: 0.9rem; }
+  .print-view .pv-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.15rem;
+  }
+  .print-view .pv-value { white-space: pre-wrap; font-size: 0.95rem; }
+
   @media print {
     body { background: #fff; }
-    nav.tabs, .actions, .settings, .settings-toggle, footer.note, .status-line { display: none !important; }
-    .panel { display: block !important; border: none; }
+    body * { visibility: hidden; }
+    #printView, #printView * { visibility: visible; }
+    #printView { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 0 0.5in; }
   }
 </style>
 </head>
 <body>
+<div class="print-view" id="printView"></div>
 <div class="wrap">
 
   <header class="masthead">
@@ -629,13 +649,69 @@
     return !!win;
   }
 
+  function escapeXml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  }
+
+  function docxParagraph(text, { bold, size, spacingAfter } = {}) {
+    const rpr = (bold ? "<w:b/>" : "") + (size ? `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` : "");
+    const ppr = spacingAfter !== undefined ? `<w:pPr><w:spacing w:after="${spacingAfter}"/></w:pPr>` : "";
+    const runProps = rpr ? `<w:rPr>${rpr}</w:rPr>` : "";
+    return `<w:p>${ppr}<w:r>${runProps}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+  }
+
+  async function buildDocxBlob(subject, kind, data) {
+    let body = docxParagraph(subject, { bold: true, size: 28, spacingAfter: 240 });
+    let any = false;
+    FIELD_KEYS[kind].forEach(([id, label]) => {
+      const v = (data[id] || "").trim();
+      if (!v) return;
+      any = true;
+      body += docxParagraph(label.toUpperCase(), { bold: true, spacingAfter: 40 });
+      v.split("\n").forEach((line) => { body += docxParagraph(line, { spacingAfter: 0 }); });
+      body += docxParagraph("", { spacingAfter: 200 });
+    });
+    if (!any) body += docxParagraph("(No fields completed.)");
+
+    const documentXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' +
+      body +
+      '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>' +
+      '</w:body></w:document>';
+
+    const contentTypesXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>';
+
+    const relsXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>';
+
+    const zip = new JSZip();
+    zip.file("[Content_Types].xml", contentTypesXml);
+    zip.file("_rels/.rels", relsXml);
+    zip.file("word/document.xml", documentXml);
+    return zip.generateAsync({
+      type: "blob",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+  }
+
   // ---- actions ----
   document.querySelectorAll(".panel[data-kind]").forEach((panel) => {
     const kind = panel.dataset.kind;
     if (kind === "saved") return;
 
     panel.querySelectorAll("button[data-action]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const data = collect(kind);
         const action = btn.dataset.action;
 
@@ -656,15 +732,29 @@
 
         if (action === "doc") {
           const subject = buildSubject(kind, data);
-          const body = buildBody(kind, data).replace(/\n/g, "<br>");
-          const html = "<html><head><meta charset='utf-8'><title>" + escapeHtml(subject) +
-            "</title></head><body><h2>" + escapeHtml(subject) + "</h2><p>" + body + "</p></body></html>";
-          const blob = new Blob(["\ufeff", html], { type: "application/msword" });
-          triggerDownload(blob, subject.replace(/[^\w\- ]+/g, "").slice(0, 60) + ".doc");
-          setStatus(panel, "Downloaded .doc.");
+          try {
+            const blob = await buildDocxBlob(subject, kind, data);
+            triggerDownload(blob, subject.replace(/[^\w\- ]+/g, "").slice(0, 60) + ".docx");
+            setStatus(panel, "Downloaded .docx.");
+          } catch (e) {
+            setStatus(panel, "Couldn't build the Word file — try again.", true);
+          }
         }
 
         if (action === "print") {
+          const subject = buildSubject(kind, data);
+          const printView = document.getElementById("printView");
+          let html = "<h1>" + escapeHtml(subject) + "</h1>";
+          let any = false;
+          FIELD_KEYS[kind].forEach(([id, label]) => {
+            const v = (data[id] || "").trim();
+            if (!v) return;
+            any = true;
+            html += '<div class="pv-field"><div class="pv-label">' + escapeHtml(label) +
+              '</div><div class="pv-value">' + escapeHtml(v) + "</div></div>";
+          });
+          if (!any) html += "<p>(No fields completed.)</p>";
+          printView.innerHTML = html;
           window.print();
         }
 
