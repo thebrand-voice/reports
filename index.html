@@ -534,6 +534,16 @@
     return "https://mail.google.com/mail/?" + p.toString();
   }
 
+  function mailtoUrl({ to, cc, subject, body }) {
+    const p = new URLSearchParams({ subject: subject, body: body });
+    if (cc) p.set("cc", cc);
+    return "mailto:" + encodeURIComponent(to || "").replace(/%40/g, "@") + "?" + p.toString();
+  }
+
+  function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
   const URL_SAFE_LIMIT = 1900;
 
   function setStatus(panel, msg, isErr) {
@@ -593,6 +603,20 @@
     const to = mailTo.value.trim();
     const cc = mailCc.value.trim();
     const authuser = mailAuthuser.value.trim();
+
+    if (isMobileDevice()) {
+      // Gmail's web compose URL gets intercepted by the Gmail app on phones,
+      // which doesn't read its parameters — mailto: is understood natively instead.
+      let finalBody = body;
+      let url = mailtoUrl({ to, cc, subject, body: finalBody });
+      if (url.length > URL_SAFE_LIMIT) {
+        finalBody = "(Report is on your clipboard — paste it here.)";
+        url = mailtoUrl({ to, cc, subject, body: finalBody });
+        if (navigator.clipboard) navigator.clipboard.writeText(body).catch(() => {});
+      }
+      window.location.href = url;
+      return true;
+    }
 
     let url = gmailComposeUrl({ to, cc, authuser, subject, body });
     let finalBody = body;
